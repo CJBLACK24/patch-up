@@ -1,0 +1,55 @@
+{
+  "editor.fontSize": 14,
+  "cSpell.words": [
+    "Bruh",
+    "googleusercontent",
+    "Haha",
+    "Jungco",
+    "ldgibi",
+    "Mamaw",
+    "patchup",
+    "Pewdie",
+    "Protacio",
+    "Shemuel",
+    "sivhd",
+    "springify",
+    "xlcmsuc"
+  ],
+  "editor.bracketPairColorization.enabled": true,
+  "editor.bracketPairColorization.independentColorPoolPerBracketType": true,
+  "editor.guides.bracketPairs": true,
+  "editor.semanticTokenColorCustomizations": {
+    "rules": {
+      "*.bracket-level-1": "#ee82ee", // violet - first level {}
+      "*.bracket-level-2": "#ffff1a", // yellow - second level {}
+      "*.bracket-level-3": "#1e90ff" // blue - third level {}
+    }
+  },
+  "editor.tokenColorCustomizations": {
+    "textMateRules": [
+      {
+        "scope": "entity.name.function",
+        "settings": {
+          "foreground": "#ffff99" // even lighter yellow if needed
+        }
+      },
+      {
+        "scope": "storage.type", // const keyword (alternative scope)
+        "settings": {
+          "foreground": "#64B5F6" // lighter blue if needed
+        }
+      }
+    ]
+  },
+  "workbench.colorCustomizations": {
+    "editorBracketHighlight.foreground1": "#ee82ee",
+    "editorBracketHighlight.foreground2": "#ffff99",
+    "editorBracketHighlight.foreground3": "#1e90ff",
+    "editorBracketHighlight.foreground4": "#eb8f1fae",
+    "editorBracketHighlight.foreground5": "#32cd32",
+    "editorBracketHighlight.foreground6": "#9370db",
+    "editorBraceHighlight.foreground": "#ffd700",
+    "editorBraceHighlight.background": "#ffd70022"
+  },
+  "CodeGPT.apiKey": "Anthropic"
+}
