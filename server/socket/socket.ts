@@ -7,6 +7,7 @@ import { registerUserEvents } from "./userEvents";
 import { registerChatEvents } from "./chatEvents";
 import Conversation from "../modals/Conversation";
 import { registerMessageEvents } from "./messageEvents";
+import { registerAssistEvents } from "./assistEvents";
 
 dotenv.config({ quiet: true }); 
 
@@ -49,7 +50,10 @@ export function initializeSocket(server: any): SocketIOServer {
     // register events
     registerChatEvents(io, socket);
     registerUserEvents(io, socket);
-    registerMessageEvents(io, socket); // ✅ add this
+    registerMessageEvents(io, socket); 
+
+    // NEW: assistance events
+    registerAssistEvents(io, socket);
 
     // join all the conversation the user is part of
     try {

@@ -1,5 +1,4 @@
 // client/app/components/Input.tsx
-
 import { StyleSheet, TextInput, View } from "react-native";
 import React, { useState } from "react";
 import { InputProps } from "@/types";
@@ -8,6 +7,7 @@ import { verticalScale } from "@/utils/styling";
 
 const Input = (props: InputProps) => {
   const [isFocused, setIsFocused] = useState(false);
+
   return (
     <View
       style={[
@@ -18,7 +18,7 @@ const Input = (props: InputProps) => {
     >
       {props.icon && props.icon}
       <TextInput
-        style={[styles.input, props.inputStyle]}
+        style={[styles.input, { fontFamily: "InterLight" }, props.inputStyle]}
         placeholderTextColor={colors.neutral400}
         ref={props.inputRef && props.inputRef}
         onFocus={() => setIsFocused(true)}
@@ -52,5 +52,6 @@ const styles = StyleSheet.create({
     flex: 1,
     color: "#ffff",
     fontSize: verticalScale(14),
+    fontFamily: "InterLight", // 👈 apply InterLight to text & placeholder
   },
 });

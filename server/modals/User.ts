@@ -1,5 +1,4 @@
 // server/modals/User.ts
-
 import { Schema, model } from "mongoose";
 import { UserProps } from "../types";
 
@@ -38,6 +37,11 @@ const UserSchema = new Schema<UserProps>({
     unique: true,
     trim: true,
     required: false,
+  },
+  // 🔔 NEW: store Expo push token for this device/user
+  expoPushToken: {
+    type: String,
+    default: "",
   },
 });
 

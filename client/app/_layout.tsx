@@ -5,11 +5,16 @@ import { Stack } from "expo-router";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import * as SplashScreen from "expo-splash-screen";
 import { useFonts } from "expo-font";
+import "react-native-reanimated";
+import "react-native-gesture-handler"; // ← keep this import at the root
 
+import { GestureHandlerRootView } from "react-native-gesture-handler"; // ← keep
 import { AuthProvider } from "@/contexts/authContext";
 import { colors } from "@/constants/theme";
 
-// Keep splash visible until fonts load
+// 🔔 NEW: foreground/bgd notification glue (no UI)
+import NotificationBridge from "@/components/NotificationBridge";
+
 SplashScreen.preventAutoHideAsync();
 
 export default function RootLayout() {
@@ -26,27 +31,35 @@ export default function RootLayout() {
   if (!fontsLoaded && !fontError) return null;
 
   return (
-    <SafeAreaProvider>
-      <View style={{ flex: 1 }} onLayout={onLayoutRootView}>
-        <AuthProvider>
-          <Stack
-            screenOptions={{
-              headerShown: false,
-              animation: "fade",
-              contentStyle: { backgroundColor: colors.black },
-            }}
-          >
-            {/* The (main) group has its own Tabs defined in app/(main)/_layout.tsx */}
-            <Stack.Screen name="(main)" options={{ headerShown: false }} />
+    // ⬇️ Wrap the whole app
+    <GestureHandlerRootView style={{ flex: 1 }}>
+      <SafeAreaProvider>
+        <View style={{ flex: 1 }} onLayout={onLayoutRootView}>
+          <AuthProvider>
+            {/* 🔔 Registers push token, handles taps, foreground local toasts */}
+            <NotificationBridge />
 
-            {/* Non-tab/overlay screens */}
-            <Stack.Screen name="conversation" options={{ headerShown: false }} />
-
-           
-           
-          </Stack>
-        </AuthProvider>
-      </View>
-    </SafeAreaProvider>
+            <Stack
+              screenOptions={{
+                headerShown: false,
+                animation: "fade_from_bottom",
+                contentStyle: { backgroundColor: colors.black },
+              }}
+            >
+              <Stack.Screen
+                name="patching"
+                options={{
+                  headerShown: false,
+                  presentation: "fullScreenModal",
+                  animation: "none",
+                  gestureEnabled: false,
+                }}
+              />
+              <Stack.Screen name="(main)" options={{ headerShown: false }} />
+            </Stack>
+          </AuthProvider>
+        </View>
+      </SafeAreaProvider>
+    </GestureHandlerRootView>
   );
 }

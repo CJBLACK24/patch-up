@@ -1,14 +1,11 @@
-// app/(auth)/register.tsx
-import React, { useRef, useState, useEffect } from "react";
+import React, { useRef, useState } from "react";
 import {
   KeyboardAvoidingView,
   Platform,
   Pressable,
-  ScrollView,
   StyleSheet,
   Text,
   View,
-  Keyboard,
 } from "react-native";
 import { CountryCode } from "react-native-country-picker-modal";
 import ScreenWrapper from "@/components/ScreenWrapper";
@@ -16,10 +13,11 @@ import Typo from "@/components/Typo";
 import { colors, spacingX, spacingY } from "@/constants/theme";
 import Input from "@/components/Input";
 import * as Icons from "phosphor-react-native";
-import { scale, verticalScale } from "@/utils/styling";
+import { verticalScale } from "@/utils/styling";
 import { useRouter } from "expo-router";
 import Button from "@/components/Button";
 import { useAuth } from "@/contexts/authContext";
+import * as SecureStore from "expo-secure-store"; // ⬅️ NEW
 
 // validation
 import { z } from "zod";
@@ -49,13 +47,7 @@ const schema = z
         const digits = v.replace(/\D/g, "");
         return /^(09\d{9}|639\d{9})$/.test(digits);
       }, "Enter a valid PH mobile number"),
-    password: z
-      .string()
-      .min(8, "Must be 8–20 characters")
-      .max(20, "Must be 8–20 characters")
-      .refine((v) => /[A-Z]/.test(v), "At least one capital letter")
-      .refine((v) => /\d/.test(v), "At least one number")
-      .refine((v) => !/\s/.test(v), "No spaces"),
+    password: z.string(),
     confirmPassword: z.string(),
   })
   .refine((data) => data.password === data.confirmPassword, {
@@ -64,6 +56,7 @@ const schema = z
   });
 
 type FormValues = z.infer<typeof schema>;
+type Field = "name" | "phone" | "email" | "password" | "confirmPassword";
 /* -------------------------------------------------------------------------- */
 
 const Register = () => {
@@ -75,7 +68,6 @@ const Register = () => {
 
   const [password, setPassword] = useState("");
   const [showPw, setShowPw] = useState(false);
-  const [showConfirm, setShowConfirm] = useState(false);
 
   const [apiError, setApiError] = useState<string | null>(null);
   const [isSigningUp, setIsSigningUp] = useState(false);
@@ -83,39 +75,16 @@ const Register = () => {
   const [nameFocused, setNameFocused] = useState(false);
   const [emailFocused, setEmailFocused] = useState(false);
   const [passwordFocused, setPasswordFocused] = useState(false);
-  const [confirmFocused, setConfirmFocused] = useState(false);
   const [phoneFocused, setPhoneFocused] = useState(false);
+
+  // show only the active field's error while typing
+  const [activeField, setActiveField] = useState<Field | null>(null);
 
   const [countryCode] = useState<CountryCode>("PH");
   const [callingCode] = useState<string>("63");
 
   const router = useRouter();
   const { signUp } = useAuth();
-
-  const scrollRef = useRef<ScrollView>(null);
-  const pwY = useRef(0);
-  const cpwY = useRef(0);
-  const [contentPadBottom, setContentPadBottom] = useState(24);
-
-  useEffect(() => {
-    const showSub = Keyboard.addListener("keyboardDidShow", (e) => {
-      setContentPadBottom(e.endCoordinates.height + 24);
-    });
-    const hideSub = Keyboard.addListener("keyboardDidHide", () => {
-      setContentPadBottom(24);
-    });
-    return () => {
-      showSub.remove();
-      hideSub.remove();
-    };
-  }, []);
-
-  const scrollIntoView = (y: number, extra = 140) => {
-    const targetY = Math.max(y - extra, 0);
-    requestAnimationFrame(() => {
-      scrollRef.current?.scrollTo({ y: targetY, animated: true });
-    });
-  };
 
   const {
     control,
@@ -133,6 +102,9 @@ const Register = () => {
       confirmPassword: "",
     },
   });
+
+  const getError = (k: Field) =>
+    (errors as any)?.[k]?.message as string | undefined;
 
   const generateStrongPassword = () => {
     const len = Math.floor(Math.random() * 5) + 12;
@@ -167,6 +139,7 @@ const Register = () => {
 
     try {
       setIsSigningUp(true);
+
       await signUp(
         emailRef.current,
         passwordRef.current,
@@ -174,7 +147,13 @@ const Register = () => {
         phoneRef.current,
         ""
       );
-      router.replace("/signup-success");
+
+      // ⬇️ Save credentials securely so Login can prefill
+      await SecureStore.setItemAsync("prefillEmail", emailRef.current);
+      await SecureStore.setItemAsync("prefillPassword", passwordRef.current);
+
+      // ⬇️ Go straight to Login
+      router.replace("/(auth)/login");
     } catch (err: any) {
       const msg =
         err?.response?.data?.message ||
@@ -188,38 +167,16 @@ const Register = () => {
 
   return (
     <KeyboardAvoidingView
-      style={styles.fullBlack} // ← paints black under keyboard transitions
-      behavior={Platform.OS === "ios" ? "padding" : undefined} // no height hack on Android
+      style={styles.fullBlack}
+      behavior={Platform.OS === "ios" ? "padding" : undefined}
       keyboardVerticalOffset={0}
     >
-      {/* Make sure wrapper also paints black */}
       <ScreenWrapper variant="default" style={styles.fullBlack}>
         <View style={styles.container}>
-          {/* Header was removed as requested */}
-
-          <View style={styles.content}>
-            <ScrollView
-              ref={scrollRef}
-              style={styles.scroll} // ← fills area with black
-              contentContainerStyle={[
-                styles.form,
-                {
-                  paddingBottom: contentPadBottom,
-                  backgroundColor: colors.black,
-                },
-              ]}
-              showsHorizontalScrollIndicator={false}
-              keyboardShouldPersistTaps="handled"
-              keyboardDismissMode="on-drag"
-              overScrollMode="never" // Android: avoid white stretch glow
-              bounces={false} // iOS: avoid white bounce
-            >
+          <View style={styles.content /* no ScrollView — fixed layout */}>
+            <View style={[styles.form, { paddingBottom: spacingY._20 }]}>
               <View style={{ marginBottom: spacingY._25 }}>
-                <Typo
-                  size={35}
-                  style={{ textAlign: "center" }}
-                  fontFamily="Candal"
-                >
+                <Typo size={35} style={{ textAlign: "center" }} fontFamily="Candal">
                   <Text style={{ color: "#6EFF87" }}>patch</Text>
                   <Text style={{ color: "#FFFFFF" }}> up</Text>
                 </Typo>
@@ -242,10 +199,14 @@ const Register = () => {
                       placeholder="Username"
                       value={value}
                       onChangeText={(v) => onChange(v)}
-                      onFocus={() => setNameFocused(true)}
+                      onFocus={() => {
+                        setNameFocused(true);
+                        setActiveField("name");
+                      }}
                       onBlur={() => {
                         setNameFocused(false);
                         onBlur();
+                        setActiveField(null);
                       }}
                       icon={
                         <Icons.UserIcon
@@ -254,8 +215,10 @@ const Register = () => {
                         />
                       }
                     />
-                    {errors.name && (
-                      <Typo color="#ef4444" fontFamily="InterLight">{errors.name.message}</Typo>
+                    {activeField === "name" && getError("name") && (
+                      <Typo color="#ef4444" fontFamily="InterLight">
+                        {getError("name")}
+                      </Typo>
                     )}
                   </>
                 )}
@@ -272,41 +235,32 @@ const Register = () => {
                       keyboardType="phone-pad"
                       value={value}
                       onChangeText={(v) => onChange(formatPhDisplay(v))}
-                      onFocus={() => setPhoneFocused(true)}
+                      onFocus={() => {
+                        setPhoneFocused(true);
+                        setActiveField("phone");
+                      }}
                       onBlur={() => {
                         setPhoneFocused(false);
                         onBlur();
+                        setActiveField(null);
                       }}
                       icon={
                         phoneFocused ? (
-                          <View
-                            style={{
-                              flexDirection: "row",
-                              alignItems: "center",
-                            }}
-                          >
-                            <Text style={{ fontSize: 18 }}>
-                              {toFlagEmoji(countryCode)}
-                            </Text>
-                            <Text
-                              style={{
-                                color: colors.neutral600,
-                                marginLeft: 6,
-                              }}
-                            >
+                          <View style={{ flexDirection: "row", alignItems: "center" }}>
+                            <Text style={{ fontSize: 18 }}>{toFlagEmoji(countryCode)}</Text>
+                            <Text style={{ color: colors.neutral600, marginLeft: 6 }}>
                               +{callingCode}
                             </Text>
                           </View>
                         ) : (
-                          <Icons.PhoneCallIcon
-                            size={verticalScale(26)}
-                            color={colors.neutral600}
-                          />
+                          <Icons.PhoneCallIcon size={verticalScale(26)} color={colors.neutral600} />
                         )
                       }
                     />
-                    {errors.phone && (
-                      <Typo color="#ef4444" fontFamily="InterLight">{errors.phone.message}</Typo>
+                    {activeField === "phone" && getError("phone") && (
+                      <Typo color="#ef4444" fontFamily="InterLight">
+                        {getError("phone")}
+                      </Typo>
                     )}
                   </>
                 )}
@@ -322,22 +276,26 @@ const Register = () => {
                       placeholder="Email"
                       value={value}
                       onChangeText={(v) => onChange(v)}
-                      onFocus={() => setEmailFocused(true)}
+                      onFocus={() => {
+                        setEmailFocused(true);
+                        setActiveField("email");
+                      }}
                       onBlur={() => {
                         setEmailFocused(false);
                         onBlur();
+                        setActiveField(null);
                       }}
                       icon={
                         <Icons.EnvelopeIcon
                           size={verticalScale(26)}
-                          color={
-                            emailFocused ? colors.green : colors.neutral600
-                          }
+                          color={emailFocused ? colors.green : colors.neutral600}
                         />
                       }
                     />
-                    {errors.email && (
-                      <Typo color="#ef4444" fontFamily="InterLight">{errors.email.message}</Typo>
+                    {activeField === "email" && getError("email") && (
+                      <Typo color="#ef4444" fontFamily="InterLight">
+                        {getError("email")}
+                      </Typo>
                     )}
                   </>
                 )}
@@ -349,12 +307,7 @@ const Register = () => {
                 name="password"
                 render={({ field: { onChange, onBlur, value } }) => (
                   <>
-                    <View
-                      style={styles.inputWrap}
-                      onLayout={(e) => {
-                        pwY.current = e.nativeEvent.layout.y;
-                      }}
-                    >
+                    <View style={styles.inputWrap}>
                       <Input
                         placeholder="New Password"
                         value={value}
@@ -365,50 +318,41 @@ const Register = () => {
                         }}
                         onFocus={() => {
                           setPasswordFocused(true);
-                          scrollIntoView(pwY.current);
+                          setActiveField("password");
                         }}
                         onBlur={() => {
                           setPasswordFocused(false);
                           onBlur();
+                          setActiveField(null);
                         }}
                         icon={
                           <Icons.LockIcon
                             size={verticalScale(26)}
-                            color={
-                              passwordFocused ? colors.green : colors.neutral600
-                            }
+                            color={passwordFocused ? colors.green : colors.neutral600}
                           />
                         }
                         containerStyle={styles.inputWithRight}
+                        autoCorrect={false}
+                        autoCapitalize="none"
+                        autoComplete="off"
+                        importantForAutofill="no"
+                        textContentType="none"
+                        keyboardType="default"
+                        returnKeyType="done"
                       />
 
-                      <View
-                        pointerEvents="box-none"
-                        style={styles.overlayRight}
-                      >
-                        <Pressable
-                          style={styles.iconBtn}
-                          onPress={generateStrongPassword}
-                        >
-                          <Icons.DiceFiveIcon
-                            size={20}
-                            color={colors.neutral200}
-                          />
+                      <View pointerEvents="box-none" style={styles.overlayRight}>
+                        <Pressable style={styles.iconBtn} onPress={generateStrongPassword}>
+                          <Icons.DiceFiveIcon size={20} color={colors.neutral200} />
                         </Pressable>
                         <Pressable
                           style={styles.iconBtn}
                           onPress={() => setShowPw((p) => !p)}
                         >
                           {showPw ? (
-                            <Icons.EyeSlashIcon
-                              size={22}
-                              color={colors.neutral200}
-                            />
+                            <Icons.EyeSlashIcon size={22} color={colors.neutral200} />
                           ) : (
-                            <Icons.EyeIcon
-                              size={22}
-                              color={colors.neutral200}
-                            />
+                            <Icons.EyeIcon size={22} color={colors.neutral200} />
                           )}
                         </Pressable>
                       </View>
@@ -417,76 +361,51 @@ const Register = () => {
                     <PasswordPopover
                       visible={passwordFocused || password.length > 0}
                       value={password}
+                      fontFamily="InterLight"
                     />
-                    {errors.password && (
-                      <Typo color="#ef4444" fontFamily="InterLight" >{errors.password.message}</Typo>
+
+                    {activeField === "password" && getError("password") && (
+                      <Typo color="#ef4444" fontFamily="InterLight">
+                        {getError("password")}
+                      </Typo>
                     )}
                   </>
                 )}
               />
 
-              {/* Confirm Password + eye */}
+              {/* Confirm Password */}
               <Controller
                 control={control}
                 name="confirmPassword"
                 render={({ field: { onChange, onBlur, value } }) => (
-                  <View
-                    style={{ position: "relative", marginTop: spacingY._10 }}
-                    onLayout={(e) => {
-                      cpwY.current = e.nativeEvent.layout.y;
-                    }}
-                  >
+                  <View style={{ position: "relative", marginTop: spacingY._10 }}>
                     <Input
                       placeholder="Confirm Password"
                       value={value}
-                      secureTextEntry={!showConfirm}
+                      secureTextEntry
                       onChangeText={(v) => onChange(v)}
-                      onFocus={() => {
-                        setConfirmFocused(true);
-                        scrollIntoView(cpwY.current);
-                      }}
+                      onFocus={() => setActiveField("confirmPassword")}
                       onBlur={() => {
-                        setConfirmFocused(false);
                         onBlur();
+                        setActiveField(null);
                       }}
                       icon={
-                        <Icons.LockKeyIcon
-                          size={verticalScale(26)}
-                          color={
-                            confirmFocused ? colors.green : colors.neutral600
-                          }
-                        />
+                        <Icons.LockKeyIcon size={verticalScale(26)} color={colors.neutral600} />
                       }
-                      containerStyle={styles.inputWithRight}
                     />
 
-                    <View pointerEvents="box-none" style={styles.overlayRight}>
-                      <Pressable
-                        style={styles.iconBtn}
-                        onPress={() => setShowConfirm((p) => !p)}
-                      >
-                        {showConfirm ? (
-                          <Icons.EyeSlashIcon
-                            size={22}
-                            color={colors.neutral200}
-                          />
-                        ) : (
-                          <Icons.EyeIcon size={22} color={colors.neutral200} />
-                        )}
-                      </Pressable>
-                    </View>
-
-                    {!!errors.confirmPassword?.message && (
-                      <Typo color="#ef4444" style={{ marginTop: 6 }}>
-                        {errors.confirmPassword?.message}
-                      </Typo>
-                    )}
+                    {activeField === "confirmPassword" &&
+                      getError("confirmPassword") && (
+                        <Typo color="#ef4444" style={{ marginTop: 6 }} fontFamily="InterLight">
+                          {getError("confirmPassword")}
+                        </Typo>
+                      )}
                   </View>
                 )}
               />
 
               {apiError && (
-                <Typo color="#ef4444" style={{ marginTop: 8 }}>
+                <Typo color="#ef4444" style={{ marginTop: 8 }} fontFamily="InterLight">
                   {apiError}
                 </Typo>
               )}
@@ -498,7 +417,7 @@ const Register = () => {
                   onPress={handleSubmit(onSubmit)}
                 >
                   <Typo fontWeight={"bold"} color={colors.black} size={20}>
-                    Sign Up
+                    Create
                   </Typo>
                 </Button>
 
@@ -508,12 +427,12 @@ const Register = () => {
                   </Typo>
                   <Pressable onPress={() => router.push("/(auth)/login")}>
                     <Typo fontWeight={"bold"} color={colors.green}>
-                      Login
+                      Sign in
                     </Typo>
                   </Pressable>
                 </View>
               </View>
-            </ScrollView>
+            </View>
           </View>
         </View>
       </ScreenWrapper>
@@ -526,7 +445,7 @@ export default Register;
 const styles = StyleSheet.create({
   fullBlack: {
     flex: 1,
-    backgroundColor: colors.black, // paints behind everything (fixes white strip)
+    backgroundColor: colors.black,
   },
   container: {
     flex: 1,
@@ -538,18 +457,14 @@ const styles = StyleSheet.create({
     backgroundColor: colors.black,
     paddingHorizontal: spacingX._20,
   },
-  scroll: {
-    flex: 1,
-    backgroundColor: colors.black,
-  },
   form: {
     gap: spacingY._15,
     marginTop: spacingY._20,
-    minHeight: "100%", // make sure content paints full height
+    minHeight: "100%",
   },
   footer: {
     flexDirection: "row",
-    justifyContent: "center",
+    justifyContent: "flex-start",
     alignItems: "center",
     gap: 5,
   },

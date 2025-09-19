@@ -1,11 +1,9 @@
-// server/socket/userEvents.tsx
-
 import { Socket, Server as SocketIOServer } from "socket.io";
 import User from "../modals/User";
 import { generateToken } from "../utils/token";
 
 export function registerUserEvents(io: SocketIOServer, socket: Socket) {
-  socket.on("testSocket", (data) => {
+  socket.on("testSocket", () => {
     socket.emit("testSocket", { msg: "realtime updates!" });
   });
 
@@ -26,7 +24,7 @@ export function registerUserEvents(io: SocketIOServer, socket: Socket) {
         const updatedUser = await User.findByIdAndUpdate(
           userId,
           { name: data.name, avatar: data.avatar, phone: data.phone },
-          { new: true } // returns the updated document
+          { new: true }
         );
 
         if (!updatedUser) {
@@ -63,11 +61,11 @@ export function registerUserEvents(io: SocketIOServer, socket: Socket) {
         });
         return;
       }
-      
+
       const users = await User.find(
         { _id: { $ne: currentUserId } },
-        { password: 0 } // exclude password field
-      ).lean(); // will fetch js objects
+        { password: 0 }
+      ).lean();
 
       const contacts = users.map((user) => ({
         id: user._id.toString(),
@@ -75,16 +73,30 @@ export function registerUserEvents(io: SocketIOServer, socket: Socket) {
         email: user.email,
         avatar: user.avatar || "",
       }));
-      socket.emit("getContacts", {
-        success: true,
-        data: contacts,
-      });
+
+      socket.emit("getContacts", { success: true, data: contacts });
     } catch (error: any) {
       console.log("getContacts error: ", error);
       socket.emit("getContacts", {
         success: false,
         msg: "Failed to fetch contacts",
       });
+    }
+  });
+
+  // 🔔 Save the Expo push token for this user
+  socket.on("registerPushToken", async (data: { token?: string }) => {
+    try {
+      const userId = socket.data.userId;
+      if (!userId || !data?.token) {
+        socket.emit("registerPushToken", { success: false, msg: "Invalid payload" });
+        return;
+      }
+      await User.findByIdAndUpdate(userId, { expoPushToken: data.token });
+      socket.emit("registerPushToken", { success: true });
+    } catch (e) {
+      console.error("registerPushToken error:", e);
+      socket.emit("registerPushToken", { success: false, msg: "Failed to save token" });
     }
   });
 }

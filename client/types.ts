@@ -131,6 +131,7 @@ export type ConversationProps = {
   };
   createdAt: string;
   updatedAt: string;
+  unreadCount?: number;
 };
 
 export type MessageProps = {

@@ -5,12 +5,8 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import ScreenWrapper from "@/components/ScreenWrapper";
 import Typo from "@/components/Typo";
 import { useRouter } from "expo-router";
-
-// ⬇️ use your constants file
 import { colors, spacingY } from "@/constants/theme";
 import { scale, verticalScale } from "@/utils/styling";
-
-// Reanimated
 import Animated, { FadeOutUp } from "react-native-reanimated";
 
 const Welcome = () => {
@@ -26,7 +22,7 @@ const Welcome = () => {
   useEffect(() => {
     const t = setTimeout(() => {
       router.replace("/(auth)/login");
-    }, 3000); // ⏱ 3s delay
+    }, 3000); // 3s delay
     return () => clearTimeout(t);
   }, [router]);
 
@@ -34,41 +30,35 @@ const Welcome = () => {
     <ScreenWrapper variant="default">
       <View style={styles.container}>
         {/* Brand – centered then lifted slightly */}
-        <Animated.View
-          exiting={FadeOutUp.duration(800)}
-          style={[
-            styles.brandWrap,
-            { transform: [{ translateY: -brandLift }] },
-          ]}
-        >
-          <Typo
-            size={scale(43)}
-            fontWeight="100"
-            style={{ textAlign: "center", fontFamily: "Candal" }}
-          >
-            <Text style={{ color: colors.green, fontFamily: "Candal" }}>
-              patch
-            </Text>
-            <Text style={{ color: colors.white, fontFamily: "Candal" }}>
-              {" "}
-              up
-            </Text>
-          </Typo>
+        {/* ✅ Layout animation lives on OUTER Animated.View */}
+        <Animated.View exiting={FadeOutUp.duration(800)} style={styles.brandWrap}>
+          {/* ✅ Transform lives on INNER plain View (no layout anim here) */}
+          <View style={{ transform: [{ translateY: -brandLift }] }}>
+            <Typo
+              size={scale(43)}
+              fontWeight="100"
+              style={{ textAlign: "center", fontFamily: "Candal" }}
+            >
+              <Text style={{ color: colors.green, fontFamily: "Candal" }}>
+                patch
+              </Text>
+              <Text style={{ color: colors.white, fontFamily: "Candal" }}>
+                {" "}up
+              </Text>
+            </Typo>
+          </View>
         </Animated.View>
 
-        {/* Tagline – pinned to safe bottom */}
+        {/* Tagline – pinned to safe bottom (no transform, safe as-is) */}
         <Animated.View
           exiting={FadeOutUp.duration(800)}
-          style={[
-            styles.taglineWrap,
-            { paddingBottom: insets.bottom + spacingY._15 },
-          ]}
+          style={[styles.taglineWrap, { paddingBottom: insets.bottom + spacingY._15 }]}
         >
           <Typo
             fontFamily="InterLight"
             color={colors.neutral100}
             size={scale(18)}
-            style={{ textAlign: "center" }} // 👈 normal font
+            style={{ textAlign: "center" }}
           >
             Vulcanize Anytime, Anywhere
           </Typo>
@@ -93,7 +83,7 @@ const styles = StyleSheet.create({
     position: "absolute",
     left: 0,
     right: 0,
-    bottom: 50, // spacing handled by insets
+    bottom: 50, // extra spacing; safe-area added dynamically
     alignItems: "center",
   },
 });

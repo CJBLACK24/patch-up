@@ -1,18 +1,19 @@
-// app/(main)/_layout.tsx
+// client/app/(main)/_layout.tsx
 import React from "react";
-import { Tabs } from "expo-router";
-import CustomNavBar from "@/components/CustomNavBar";
+import { Stack } from "expo-router";
 
-export default function MainTabsLayout() {
+export default function MainStackLayout() {
   return (
-    <Tabs
-      tabBar={(props) => <CustomNavBar {...props} />}
-      screenOptions={{ headerShown: false }} // hide the white header
-    >
-      <Tabs.Screen name="home" options={{ title: "Home" }} />
-      <Tabs.Screen name="message" options={{ title: "Message" }} />
-      <Tabs.Screen name="profileModal" options={{ title: "Profile" }} />
-    </Tabs>
+    <Stack screenOptions={{ headerShown: false }}>
+      {/* Tabs live under this group */}
+      <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+      <Stack.Screen
+        name="newConversationModal"
+        options={{ presentation: "modal", headerShown: false }}
+      />
+
+      {/* Conversation stays outside tabs -> no bottom bar */}
+      <Stack.Screen name="conversation" options={{ headerShown: false }} />
+    </Stack>
   );
 }
-

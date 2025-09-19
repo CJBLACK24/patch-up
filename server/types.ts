@@ -1,5 +1,4 @@
 // server/types.ts
-
 import { Document, Types } from "mongoose";
 
 export interface UserProps extends Document {
@@ -12,6 +11,8 @@ export interface UserProps extends Document {
   phone?: string;
   resetPasswordToken?: string;
   resetPasswordExpires?: Date;
+  /** NEW: push token for Expo */
+  expoPushToken?: string;
 }
 
 export interface ConversationProps extends Document {
@@ -26,3 +27,15 @@ export interface ConversationProps extends Document {
   updatedAt: Date;
 }
 
+/** ================== NEW ==================
+ * Per-user conversation state, used for unread badges.
+ */
+export interface ConversationMetaProps extends Document {
+  _id: Types.ObjectId;
+  conversationId: Types.ObjectId;
+  userId: Types.ObjectId;
+  unreadCount: number;
+  lastReadAt?: Date;
+  createdAt: Date;
+  updatedAt: Date;
+}

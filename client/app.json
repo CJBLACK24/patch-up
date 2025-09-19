@@ -8,35 +8,25 @@
     "icon": "./assets/images/adaptive-icon.png",
     "scheme": "patchup",
     "userInterfaceStyle": "automatic",
+
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.yourcompany.patchup",
-      "config": {
-        "usesNonExemptEncryption": false
+      "config": { "usesNonExemptEncryption": false },
+      "infoPlist": {
+        "NSLocationWhenInUseUsageDescription": "We use your location to show your position on the map."
       }
     },
+
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/adaptive-icon.png",
         "backgroundColor": "#0D0D0D"
       },
       "package": "com.yourcompany.patchup",
-      "intentFilters": [
-        {
-          "action": "VIEW",
-          "data": [
-            {
-              "scheme": "patchup",
-              "host": "oauth"
-            }
-          ],
-          "category": [
-            "BROWSABLE",
-            "DEFAULT"
-          ]
-        }
-      ]
+      "permissions": ["ACCESS_FINE_LOCATION", "ACCESS_COARSE_LOCATION"]
     },
+
     "plugins": [
       "expo-router",
       [
@@ -48,13 +38,17 @@
           "backgroundColor": "#0D0D0D"
         }
       ],
-      "expo-secure-store"
+      "expo-secure-store",
+      "@maplibre/maplibre-react-native",
+      "expo-notifications"  
     ],
+
     "extra": {
       "router": {},
       "eas": {
         "projectId": "969a417a-4a49-4064-9571-5832b8571c40"
-      }
+      },
+      "MAPTILER_KEY": "iNtS1QIPq27RGWxB2TSX"
     }
   }
 }

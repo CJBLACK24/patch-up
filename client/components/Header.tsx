@@ -19,7 +19,8 @@ const Header = ({
       {title && (
         <Typo
           size={22}
-          fontWeight={"600"}
+          fontWeight={"900"}
+          fontFamily="InterLight"
           style={styles.title}
           color={isProfileTitle ? colors.black : colors.white} // Conditional color
         >

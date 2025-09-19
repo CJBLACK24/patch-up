@@ -1,4 +1,3 @@
-// client/app/(main)/conversation.tsx
 import {
   Alert,
   FlatList,
@@ -9,11 +8,11 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import ScreenWrapper from "@/components/ScreenWrapper";
 import Typo from "@/components/Typo";
-import { colors, radius, spacingX, spacingY } from "@/constants/theme";
-import { useLocalSearchParams } from "expo-router";
+import { colors, spacingX, spacingY } from "@/constants/theme";
+import { useLocalSearchParams, useFocusEffect } from "expo-router";
 import { useAuth } from "@/contexts/authContext";
 import { scale, verticalScale } from "@/utils/styling";
 import Header from "@/components/Header";
@@ -26,7 +25,7 @@ import * as ImagePicker from "expo-image-picker";
 import Loading from "@/components/Loading";
 import { uploadFileToCloudinary } from "@/services/imageService";
 import { MessageProps } from "@/types";
-import { getMessages, newMessage } from "@/socket/socketEvents";
+import { getMessages, newMessage, markAsRead } from "@/socket/socketEvents";
 
 // Shape coming from the server after populate
 type ServerMessage = {
@@ -39,6 +38,7 @@ type ServerMessage = {
     name: string;
     avatar: string | null;
   };
+  conversationId?: string;
 };
 
 const Conversation = () => {
@@ -98,7 +98,7 @@ const Conversation = () => {
     const handleNew = (res: any) => {
       if (res?.success && res.data) {
         const mapped = toClientMessage(res.data as ServerMessage);
-        setMessages(prev => [mapped, ...prev]); // FlatList is inverted
+        setMessages((prev) => [mapped, ...prev]); // FlatList inverted
       }
     };
 
@@ -112,6 +112,20 @@ const Conversation = () => {
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [conversationId, currentUser?.id]);
+
+  /** ===== NEW: markAsRead whenever this screen is focused ===== */
+  const markCurrentAsRead = useCallback(() => {
+    if (conversationId) {
+      markAsRead(conversationId as string);
+    }
+  }, [conversationId]);
+
+  useFocusEffect(
+    useCallback(() => {
+      markCurrentAsRead();
+      return () => {};
+    }, [markCurrentAsRead])
+  );
 
   const onPickFile = async () => {
     const result = await ImagePicker.launchImageLibraryAsync({
@@ -152,6 +166,9 @@ const Conversation = () => {
 
       setMessage("");
       setSelectedFile(null);
+
+      // mark our own view as read (keeps unread at 0 as we send)
+      markCurrentAsRead();
     } catch (error) {
       console.log("Error sending message: ", error);
       Alert.alert("Error", "Failed to send message");
@@ -177,7 +194,12 @@ const Conversation = () => {
                 uri={conversationAvatar || null}
                 isGroup={type === "group"}
               />
-              <Typo color={colors.white} fontWeight={"500"} size={20}>
+              <Typo
+                color={colors.white}
+                fontFamily="InterLight"
+                fontWeight={800}
+                size={20}
+              >
                 {conversationName}
               </Typo>
             </View>
@@ -212,9 +234,13 @@ const Conversation = () => {
               containerStyle={{
                 paddingLeft: spacingX._10,
                 paddingRight: scale(65),
-                borderWidth: 0,
+                // ⬇️ added subtle rounded border (only change)
+                borderWidth: 1.25,
+                borderColor: colors.neutral600,
+                borderRadius: 15,
+                
               }}
-              placeholder="Type message"
+              placeholder="Message..."
               icon={
                 <TouchableOpacity style={styles.inputIcon} onPress={onPickFile}>
                   <Icons.PlusIcon
@@ -223,7 +249,10 @@ const Conversation = () => {
                     size={verticalScale(22)}
                   />
                   {selectedFile?.uri && (
-                    <Image source={{ uri: selectedFile.uri }} style={styles.selectedFile} />
+                    <Image
+                      source={{ uri: selectedFile.uri }}
+                      style={styles.selectedFile}
+                    />
                   )}
                 </TouchableOpacity>
               }
@@ -274,21 +303,21 @@ const styles = StyleSheet.create({
     position: "absolute",
     height: verticalScale(38),
     width: verticalScale(38),
-    borderRadius: radius.full,
+    borderRadius: 1000,
     alignSelf: "center",
   },
   content: {
     flex: 1,
-    backgroundColor: colors.white,
-    borderTopLeftRadius: radius._50,
-    borderTopRightRadius: radius._50,
+    backgroundColor: colors.black,
+    borderTopLeftRadius: 50,
+    borderTopRightRadius: 50,
     borderCurve: "continuous",
     overflow: "hidden",
     paddingHorizontal: spacingX._15,
   },
   inputIcon: {
     backgroundColor: colors.primary,
-    borderRadius: radius.full,
+    borderRadius: 1000,
     padding: 8,
   },
   footer: {
@@ -303,7 +332,7 @@ const styles = StyleSheet.create({
   },
   plusIcon: {
     backgroundColor: colors.primary,
-    borderRadius: radius.full,
+    borderRadius: 1000,
     padding: 8,
   },
 });

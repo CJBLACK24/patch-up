@@ -1,8 +1,9 @@
-// app/(auth)/forgot-password
+// app/(auth)/forgot-password.tsx
 import React, { useState } from "react";
 import { StyleSheet, View, Alert } from "react-native";
 import { useRouter } from "expo-router";
-import ScreenWrapper from "@/components/ScreenWrapper";
+// ⛔️ Removed: import ScreenWrapper from "@/components/ScreenWrapper";
+import { SafeAreaView } from "react-native-safe-area-context";
 import Typo from "@/components/Typo";
 import Input from "@/components/Input";
 import Button from "@/components/Button";
@@ -38,7 +39,7 @@ export default function ForgotPassword() {
   };
 
   return (
-    <ScreenWrapper>
+    <SafeAreaView style={styles.safeArea}>
       <Typo
         size={28}
         fontWeight="600"
@@ -61,16 +62,12 @@ export default function ForgotPassword() {
               color={colors.neutral600}
               weight="regular"
             />
-          } // ✅ Email icon added
+          }
         />
 
         <Button loading={loading} onPress={handleSend}>
           <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
-            <Icons.TelegramLogoIcon
-              size={20}
-              color={colors.black}
-              weight="fill"
-            />
+            <Icons.TelegramLogoIcon size={20} color={colors.black} weight="fill" />
             <Typo size={16} fontWeight="bold" color={colors.black}>
               Send reset PIN
             </Typo>
@@ -79,11 +76,17 @@ export default function ForgotPassword() {
 
         {message ? <Typo style={styles.message}>{message}</Typo> : null}
       </View>
-    </ScreenWrapper>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
+  safeArea: {
+    flex: 1,
+    backgroundColor: (colors as any)?.bg ?? "#0D0D0D",
+    paddingTop: spacingY._20,
+    paddingBottom: spacingY._20,
+  },
   title: {
     textAlign: "center",
     marginBottom: spacingY._20,

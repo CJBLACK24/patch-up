@@ -139,7 +139,7 @@ const Login = () => {
         await removePasswordFor(payload.identifier);
       }
 
-      router.replace("/(auth)/patching");
+      router.replace("/patching");
     } catch (error: any) {
       setLoginError(error?.message || "Invalid credentials. Please try again.");
     } finally {
@@ -290,7 +290,7 @@ const Login = () => {
             <View style={{ marginTop: spacingY._25, gap: spacingY._15 }}>
               <Button loading={isSigningIn} onPress={handleSubmit}>
                 <Typo fontWeight="bold" color={colors.black} size={20}>
-                  Login
+                  Sign in
                 </Typo>
               </Button>
 
@@ -300,7 +300,7 @@ const Login = () => {
                 </Typo>
                 <Pressable onPress={() => router.push("/(auth)/register")}>
                   <Typo fontWeight="bold" color={colors.green}>
-                    Sign Up
+                    Sign up
                   </Typo>
                 </Pressable>
               </View>
@@ -359,7 +359,7 @@ const styles = StyleSheet.create({
   },
   footer: {
     flexDirection: "row",
-    justifyContent: "center",
+    justifyContent: "flex-start",
     alignItems: "center",
     gap: 5,
   },

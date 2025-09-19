@@ -61,7 +61,7 @@ const NewConversationModal = () => {
     if (res.success) {
       router.back();
       router.push({
-        pathname: "/conversation",
+        pathname: "/(main)/conversation",
         params: {
           id: res.data._id,
           name: res.data.name,
@@ -143,34 +143,6 @@ const NewConversationModal = () => {
       setIsLoading(false);
     }
   };
-
-  // const contacts = [
-  //   {
-  //     id: "1",
-  //     name: "CJBLACK",
-  //     avatar: "https://i.pravatar.cc/400?img=70",
-  //   },
-  //   {
-  //     id: "2",
-  //     name: "Leo John",
-  //     avatar: "https://i.pravatar.cc/400?img=70",
-  //   },
-  //   {
-  //     id: "3",
-  //     name: "Shemuel",
-  //     avatar: "https://i.pravatar.cc/400?img=70",
-  //   },
-  //   {
-  //     id: "4",
-  //     name: "Jungco",
-  //     avatar: "https://i.pravatar.cc/400?img=70",
-  //   },
-  //   {
-  //     id: "5",
-  //     name: "Ethan",
-  //     avatar: "https://i.pravatar.cc/400?img=70",
-  //   },
-  // ];
 
   return (
     <ScreenWrapper isModal={true}>
